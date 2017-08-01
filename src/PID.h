@@ -12,10 +12,14 @@ public:
 
   /*
   * Coefficients
-  */ 
+  */
   double Kp;
   double Ki;
   double Kd;
+
+  // additional params
+  double previouse_cte;
+  double total_cte;
 
   /*
   * Constructor
@@ -28,7 +32,7 @@ public:
   virtual ~PID();
 
   /*
-  * Initialize PID.
+  * Initialize PID params
   */
   void Init(double Kp, double Ki, double Kd);
 
@@ -40,7 +44,10 @@ public:
   /*
   * Calculate the total PID error.
   */
-  double TotalError();
+  double getTotalError();
+
+  double getSteerValue(double cte);
+  double twiddleParams(double cte, double angle);
 };
 
 #endif /* PID_H */

@@ -11,6 +11,9 @@ using json = nlohmann::json;
 constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
+const double KP = 0.2;
+const double KI = 0.004;
+const double KD = 3.0;
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -34,6 +37,7 @@ int main()
 
   PID pid;
   // TODO: Initialize the pid variable.
+  pid.Init(KP, KI, KD);
 
   h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -57,13 +61,27 @@ int main()
           * NOTE: Feel free to play around with the throttle and speed. Maybe use
           * another PID controller to control the speed!
           */
-          
+
+          double throttle = 0.3;
+          steer_value = pid.getSteerValue(cte);
+          if (speed > 7.0 && fabs(cte) > 0.7) {
+            throttle = -0.3;
+            pid.Kp = fabs(cte)*0.25;
+            pid.Kd = fabs(cte)*0.125;
+          } else {
+            pid.Kp = KP;
+            pid.Kd = KD;
+            pid.Ki = KI;
+          }
+
           // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
+          std::cout << "CTE:\t" << cte << "\tSteering Value:\t" << steer_value << " \t";
+          std::cout << "angle:\t" << deg2rad(angle) << "\t";
+          //std::cout << "speed:\t" << speed << "\t";
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.3;
+          msgJson["throttle"] = throttle;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
