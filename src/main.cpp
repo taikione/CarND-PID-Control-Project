@@ -11,9 +11,10 @@ using json = nlohmann::json;
 constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
-const double KP = 0.2;
-const double KI = 0.004;
-const double KD = 3.0;
+
+const double KP = 0.17;
+const double KI = 0.00065;
+const double KD = 6.2;
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -52,9 +53,8 @@ int main()
         if (event == "telemetry") {
           // j[1] is the data JSON object
           double cte = std::stod(j[1]["cte"].get<std::string>());
-          double speed = std::stod(j[1]["speed"].get<std::string>());
+          //double speed = std::stod(j[1]["speed"].get<std::string>());
           double angle = std::stod(j[1]["steering_angle"].get<std::string>());
-          double steer_value;
           /*
           * TODO: Calcuate steering value here, remember the steering value is
           * [-1, 1].
@@ -62,26 +62,15 @@ int main()
           * another PID controller to control the speed!
           */
 
-          double throttle = 0.3;
-          steer_value = pid.getSteerValue(cte);
-          if (speed > 7.0 && fabs(cte) > 0.7) {
-            throttle = -0.3;
-            pid.Kp = fabs(cte)*0.25;
-            pid.Kd = fabs(cte)*0.125;
-          } else {
-            pid.Kp = KP;
-            pid.Kd = KD;
-            pid.Ki = KI;
-          }
+          double steer_value = pid.getSteerValue(cte);
 
           // DEBUG
           std::cout << "CTE:\t" << cte << "\tSteering Value:\t" << steer_value << " \t";
           std::cout << "angle:\t" << deg2rad(angle) << "\t";
-          //std::cout << "speed:\t" << speed << "\t";
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = throttle;
+          msgJson["throttle"] = 0.3;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
